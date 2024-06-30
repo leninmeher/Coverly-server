@@ -79,7 +79,17 @@ app.post('/create-user', async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (user) {
-        await User.findOneAndUpdate({ email: req.body.email }, { $set: { resumeName: req.body.resumeName, name: req.body.name } }, { new: false })
+
+        const updates = {
+            resumeName: req.body.resumeName,
+            name: req.body.name
+        }
+
+        if(req.body.resumeData != ""){
+            updates.resumeData = req.body.resumeData;
+        }
+
+        await User.findOneAndUpdate({ email: req.body.email }, { $set: updates }, { new: false })
             .then((updatedUser) => {
                 if (!updatedUser) return res.status(200)
                     .json({
