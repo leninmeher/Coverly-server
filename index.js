@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const app = express();
 const User = require('./model/User');
 require('dotenv').config();
-console.log(process.env.MONGO_URI);
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 app.use(express.json())
@@ -29,7 +28,7 @@ const connectDB = async () => {
         const conn = await mongoose.connect(uri, {
             useNewUrlParser: true,
         });
-        console.log(`MongoDB Connected: {conn.connection.host}`);
+        console.log(`MongoDB Connected`);
     } catch (error) {
         console.error(error.message);
         process.exit(1);
@@ -39,7 +38,8 @@ const connectDB = async () => {
 connectDB();
 
 app.get('/get-user', async (req, res) => {
-    if (!req.email) {
+
+    if (!req.query.email) {
         return res.status(400)
             .json({
                 success: false,
@@ -47,7 +47,7 @@ app.get('/get-user', async (req, res) => {
             })
     }
 
-    const user = User.findOne({ email: req.params.email });
+    const user = await User.findOne({ email: req.query.email });
 
     if (user) {
         return res.status(200)
@@ -59,13 +59,13 @@ app.get('/get-user', async (req, res) => {
         return res.status(400)
             .json({
                 success: false,
-                message: "No user found",
+                error: "No user found",
             })
     }
 })
 
 app.post('/create-user', async (req, res) => {
-    console.log(req.body);
+
     if (!req.body.name || !req.body.email) {
         return res.status(400)
             .json({
@@ -87,12 +87,12 @@ app.post('/create-user', async (req, res) => {
             if (!createdUser) return res.status(404)
                 .json({
                     success: false,
-                    message: "User creation failed"
+                    error: "User creation failed"
                 })
             res.status(201)
                 .json({
                     success: true,
-                    createdUser
+                    data: createdUser
                 })
         })
         .catch((error) => {
@@ -120,13 +120,12 @@ app.post('/add-resume', async (req, res) => {
             if (!updatedUser) return res.status(404)
                 .json({
                     success: false,
-                    message: "User creation failed",
-                    error: "Unable get created task"
+                    error: "User creation failed"
                 })
             res.status(200)
                 .json({
                     success: true,
-                    updatedUser
+                    data: updatedUser
                 })
         })
         .catch((error) => {
@@ -147,7 +146,7 @@ app.post('/generate-cover-letter', async(req, res) => {
             })
     }
 
-    const user = User.findOne({email: req.body.email});
+    const user = await User.findOne({email: req.body.email});
 
     if(!user.resumeData || user.resumeData == ""){
         return res.status(400)
@@ -164,7 +163,7 @@ app.post('/generate-cover-letter', async(req, res) => {
         return res.status(200)
             .json({
                 success: true,
-                message: response
+                data: response
             })
       } catch (error) {
         console.log('response error', error);
@@ -185,7 +184,7 @@ app.post('/generate-cold-mail', async(req, res) => {
             })
     }
 
-    const user = User.findOne({email: req.body.email});
+    const user = await User.findOne({email: req.body.email});
 
     if(!user.resumeData || user.resumeData == ""){
         return res.status(400)
@@ -202,7 +201,7 @@ app.post('/generate-cold-mail', async(req, res) => {
         return res.status(200)
             .json({
                 success: true,
-                message: response
+                data: response
             })
       } catch (error) {
         console.log('response error', error);
@@ -216,5 +215,5 @@ app.post('/generate-cold-mail', async(req, res) => {
 
 
 app.listen(8000, () => {
-    console.log("server started on port 8000");
+    console.log("server started");
 });
