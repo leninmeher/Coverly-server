@@ -42,7 +42,7 @@ connectDB();
 app.get('/get-user', async (req, res) => {
 
     if (!req.query.email) {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please enter your email'
@@ -58,7 +58,7 @@ app.get('/get-user', async (req, res) => {
                 data: user
             })
     } else {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: "No user found",
@@ -69,7 +69,7 @@ app.get('/get-user', async (req, res) => {
 app.post('/create-user', async (req, res) => {
 
     if (!req.body.name || !req.body.email) {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please enter compulsory fields'
@@ -79,9 +79,9 @@ app.post('/create-user', async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (user) {
-        await User.findOneAndUpdate({ email: req.body.email }, { $set: { resumeName: req.body.resumeName, resumeData: req.body.resumeData, name: req.body.name } }, { new: true })
+        await User.findOneAndUpdate({ email: req.body.email }, { $set: { resumeName: req.body.resumeName, name: req.body.name } }, { new: false })
             .then((updatedUser) => {
-                if (!updatedUser) return res.status(404)
+                if (!updatedUser) return res.status(200)
                     .json({
                         success: false,
                         error: "User creation failed"
@@ -93,7 +93,7 @@ app.post('/create-user', async (req, res) => {
                     })
             })
             .catch((error) => {
-                res.status(404)
+                res.status(500)
                     .json({
                         success: false,
                         error: error.message
@@ -110,7 +110,7 @@ app.post('/create-user', async (req, res) => {
 
         await User.create(newUser)
             .then((createdUser) => {
-                if (!createdUser) return res.status(404)
+                if (!createdUser) return res.status(200)
                     .json({
                         success: false,
                         error: "User creation failed"
@@ -122,7 +122,7 @@ app.post('/create-user', async (req, res) => {
                     })
             })
             .catch((error) => {
-                res.status(404)
+                res.status(500)
                     .json({
                         success: false,
                         error: error.message
@@ -134,7 +134,7 @@ app.post('/create-user', async (req, res) => {
 app.post('/add-resume', async (req, res) => {
 
     if (!req.body.resumeData || !req.body.email) {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please add your resume'
@@ -142,9 +142,9 @@ app.post('/add-resume', async (req, res) => {
     }
 
 
-    await User.findOneAndUpdate({ email: req.body.email }, { $set: { resumeName: req.body.resumeName, resumeData: req.body.resumeData } }, { new: true })
+    await User.findOneAndUpdate({ email: req.body.email }, { $set: { resumeName: req.body.resumeName, resumeData: req.body.resumeData } }, { new: false })
         .then((updatedUser) => {
-            if (!updatedUser) return res.status(404)
+            if (!updatedUser) return res.status(200)
                 .json({
                     success: false,
                     error: "User creation failed"
@@ -156,7 +156,7 @@ app.post('/add-resume', async (req, res) => {
                 })
         })
         .catch((error) => {
-            res.status(404)
+            res.status(500)
                 .json({
                     success: false,
                     error: error.message
@@ -166,7 +166,7 @@ app.post('/add-resume', async (req, res) => {
 
 app.post('/generate-cover-letter', async (req, res) => {
     if (!req.body.email) {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please add your email'
@@ -176,7 +176,7 @@ app.post('/generate-cover-letter', async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user.resumeData || user.resumeData == "") {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please add your Resume'
@@ -204,7 +204,7 @@ app.post('/generate-cover-letter', async (req, res) => {
 
 app.post('/generate-cold-mail', async (req, res) => {
     if (!req.body.email) {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please add your email'
@@ -214,7 +214,7 @@ app.post('/generate-cold-mail', async (req, res) => {
     const user = await User.findOne({ email: req.body.email });
 
     if (!user.resumeData || user.resumeData == "") {
-        return res.status(400)
+        return res.status(200)
             .json({
                 success: false,
                 error: 'Please add your Resume'
