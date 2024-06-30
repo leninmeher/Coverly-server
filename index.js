@@ -12,16 +12,16 @@ app.use(cors());
 const gemini_api_key = process.env.GOOGLE_GEMINI_API_KEY;
 const googleAI = new GoogleGenerativeAI(gemini_api_key);
 const geminiConfig = {
-  temperature: 0.9,
-  topP: 1,
-  topK: 1,
-  maxOutputTokens: 4096,
+    temperature: 0.9,
+    topP: 1,
+    topK: 1,
+    maxOutputTokens: 4096,
 };
 
 const geminiModel = googleAI.getGenerativeModel({
     model: 'gemini-1.5-flash',
     geminiConfig,
-  });
+});
 
 const uri = process.env.MONGO_URI;
 
@@ -76,34 +76,59 @@ app.post('/create-user', async (req, res) => {
             })
     }
 
-    const user = new User({
-        name: req.body.name,
-        email: req.body.email,
-        resumeName: req.body.resumeName,
-        resumeData: req.body.resumeData
-    });
+    const user = await User.findOne({ email: req.body.email });
 
+    if (user) {
+        await User.findOneAndUpdate({ email: req.body.email }, { $set: { resumeName: req.body.resumeName, resumeData: req.body.resumeData, name: req.body.name } }, { new: true })
+            .then((updatedUser) => {
+                if (!updatedUser) return res.status(404)
+                    .json({
+                        success: false,
+                        error: "User creation failed"
+                    })
+                res.status(200)
+                    .json({
+                        success: true,
+                        data: updatedUser
+                    })
+            })
+            .catch((error) => {
+                res.status(404)
+                    .json({
+                        success: false,
+                        error: error.message
+                    })
+            })
+    } else {
 
-    await User.create(user)
-        .then((createdUser) => {
-            if (!createdUser) return res.status(404)
-                .json({
-                    success: false,
-                    error: "User creation failed"
-                })
-            res.status(201)
-                .json({
-                    success: true,
-                    data: createdUser
-                })
-        })
-        .catch((error) => {
-            res.status(404)
-                .json({
-                    success: false,
-                    error: error.message
-                })
-        })
+        const newUser = new User({
+            name: req.body.name,
+            email: req.body.email,
+            resumeName: req.body.resumeName,
+            resumeData: req.body.resumeData
+        });
+
+        await User.create(newUser)
+            .then((createdUser) => {
+                if (!createdUser) return res.status(404)
+                    .json({
+                        success: false,
+                        error: "User creation failed"
+                    })
+                res.status(201)
+                    .json({
+                        success: true,
+                        data: createdUser
+                    })
+            })
+            .catch((error) => {
+                res.status(404)
+                    .json({
+                        success: false,
+                        error: error.message
+                    })
+            })
+    }
 })
 
 app.post('/add-resume', async (req, res) => {
@@ -139,8 +164,8 @@ app.post('/add-resume', async (req, res) => {
         })
 })
 
-app.post('/generate-cover-letter', async(req, res) => {
-    if(!req.body.email){
+app.post('/generate-cover-letter', async (req, res) => {
+    if (!req.body.email) {
         return res.status(400)
             .json({
                 success: false,
@@ -148,9 +173,9 @@ app.post('/generate-cover-letter', async(req, res) => {
             })
     }
 
-    const user = await User.findOne({email: req.body.email});
+    const user = await User.findOne({ email: req.body.email });
 
-    if(!user.resumeData || user.resumeData == ""){
+    if (!user.resumeData || user.resumeData == "") {
         return res.status(400)
             .json({
                 success: false,
@@ -167,18 +192,18 @@ app.post('/generate-cover-letter', async(req, res) => {
                 success: true,
                 data: response
             })
-      } catch (error) {
+    } catch (error) {
         console.log('response error', error);
         return res.status(500)
             .json({
                 success: false,
                 error: error
             })
-      }
+    }
 })
 
-app.post('/generate-cold-mail', async(req, res) => {
-    if(!req.body.email){
+app.post('/generate-cold-mail', async (req, res) => {
+    if (!req.body.email) {
         return res.status(400)
             .json({
                 success: false,
@@ -186,9 +211,9 @@ app.post('/generate-cold-mail', async(req, res) => {
             })
     }
 
-    const user = await User.findOne({email: req.body.email});
+    const user = await User.findOne({ email: req.body.email });
 
-    if(!user.resumeData || user.resumeData == ""){
+    if (!user.resumeData || user.resumeData == "") {
         return res.status(400)
             .json({
                 success: false,
@@ -205,14 +230,14 @@ app.post('/generate-cold-mail', async(req, res) => {
                 success: true,
                 data: response
             })
-      } catch (error) {
+    } catch (error) {
         console.log('response error', error);
         return res.status(500)
             .json({
                 success: false,
                 error: error
             })
-      }
+    }
 })
 
 
