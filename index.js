@@ -5,9 +5,14 @@ const User = require('./model/User');
 require('dotenv').config();
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const cors = require('cors');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
 
 app.use(express.json());
 app.use(cors());
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 const gemini_api_key = process.env.GOOGLE_GEMINI_API_KEY;
 const googleAI = new GoogleGenerativeAI(gemini_api_key);
@@ -66,7 +71,7 @@ app.get('/get-user', async (req, res) => {
     }
 })
 
-app.post('/create-user', async (req, res) => {
+app.post('/create-user', upload.single('resume'), async (req, res) => {
 
     if (!req.body.name || !req.body.email) {
         return res.status(200)
@@ -78,15 +83,24 @@ app.post('/create-user', async (req, res) => {
 
     const user = await User.findOne({ email: req.body.email });
 
+    try{
+
     if (user) {
+        let updates;
 
-        const updates = {
-            resumeName: req.body.resumeName,
-            name: req.body.name
-        }
+        if (!req.file) {
+            updates = {
+                name: req.body.name,
+                resumeData: user.resumeData
+            }
+        }else{
+            const buffer = req.file.buffer;
+            const data = await pdfParse(buffer);
 
-        if(req.body.resumeData != ""){
-            updates.resumeData = req.body.resumeData;
+            updates = {
+                name: req.body.name,
+                resumeData: JSON.stringify(data)
+            }
         }
 
         await User.findOneAndUpdate({ email: req.body.email }, { $set: updates }, { new: false })
@@ -111,11 +125,21 @@ app.post('/create-user', async (req, res) => {
             })
     } else {
 
+        if (!req.file) {
+            return res.status(200).json({
+                success: false,
+                error: 'Please upload you resume'
+            });
+        }
+
+        const buffer = req.file.buffer;
+        const data = await pdfParse(buffer);
+
         const newUser = new User({
             name: req.body.name,
             email: req.body.email,
             resumeName: req.body.resumeName,
-            resumeData: req.body.resumeData
+            resumeData: JSON.stringify(data.text)
         });
 
         await User.create(newUser)
@@ -138,6 +162,9 @@ app.post('/create-user', async (req, res) => {
                         error: error.message
                     })
             })
+    }}catch (error) {
+        res.status(200).json({ success: false,
+            error: 'Invalid resume, Please try with a new resume'});
     }
 })
 
